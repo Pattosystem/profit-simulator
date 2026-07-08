@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIAS 製剤マスタ管理</title>
+<!--
+  ▼ Supabase セットアップ（SQL Editorで一度だけ実行）
+  create table if not exists categories (
+    name text primary key, sort int default 0, created_at timestamptz default now());
+  create table if not exists products (
+    id text primary key, cat text, name text, unit text default '本',
+    doses numeric default 1, cons numeric default 0, default_cost numeric default 0,
+    regions jsonb default '{}'::jsonb, sort int default 0, created_at timestamptz default now());
+  alter table categories enable row level security;
+  alter table products   enable row level security;
+  create policy "cat anon all"  on categories for all to anon using (true) with check (true);
+  create policy "prod anon all" on products   for all to anon using (true) with check (true);
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#0F1E38;--ink-2:#33445f;--ink-3:#6b7890;--paper:#FAF7F1;--card:#fff;
+    --gold:#B78A3E;--gold-deep:#9a7330;--gold-soft:#f3ead7;--line:#e7e2d7;--red:#b4432f;--green:#3f7d55;
+    --radius:14px;
+    --jp:"Noto Sans JP",-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+    --num:"Space Grotesk","Noto Sans JP",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--jp);background:var(--paper);color:var(--ink);line-height:1.6;padding:20px 16px 60px}
+  .wrap{max-width:900px;margin:0 auto}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:18px;margin-bottom:20px;border-bottom:2px solid var(--ink)}
+  .brand{display:flex;align-items:baseline;gap:12px}
+  .logo{font-family:var(--num);font-weight:700;font-size:22px;letter-spacing:.14em}
+  .logo b{color:var(--gold)}
+  .tagline{font-size:12px;color:var(--ink-3)}
+  .toplink{font-size:13px;font-weight:600;color:var(--gold-deep);text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:8px 14px}
+  .toplink:hover{background:var(--gold-soft)}
+
+  .banner{background:#fff7e6;border:1px solid var(--gold);color:var(--gold-deep);border-radius:10px;padding:11px 14px;font-size:12.5px;margin-bottom:20px}
+  .banner b{color:var(--ink)}
+
+  .sect{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px}
+  .sect-h{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--ink-3);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+
+  /* category rows */
+  .cat-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .cat-row:last-child{border-bottom:none}
+  .cat-name{flex:1;font-weight:600;font-size:15px}
+  .cat-count{font-size:11px;color:var(--ink-3);font-family:var(--num)}
+  .mini{font-family:var(--jp);font-size:12px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 9px;cursor:pointer;color:var(--ink-2)}
+  .mini:hover{border-color:var(--gold);color:var(--gold-deep)}
+  .mini.del:hover{border-color:var(--red);color:var(--red)}
+  .mini:disabled{opacity:.3;cursor:not-allowed}
+  .add-row{display:flex;gap:8px;margin-top:14px}
+  .add-row input{flex:1;font-family:var(--jp);font-size:14px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:#fff}
+  .add-row input:focus{outline:2px solid var(--gold);outline-offset:1px}
+
+  .btn{font-family:var(--jp);font-size:13px;font-weight:700;border:none;border-radius:9px;padding:10px 16px;cursor:pointer;white-space:nowrap}
+  .btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{background:var(--gold-deep)}
+  .btn-ink{background:var(--ink);color:#fff}.btn-ink:hover{background:#1a2c4a}
+  .btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  /* product list */
+  .prod-cat{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--gold-deep);margin:18px 0 6px;padding-bottom:4px;border-bottom:1px dashed var(--line)}
+  .prod-cat:first-child{margin-top:0}
+  .prod-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .prod-row:last-child{border-bottom:none}
+  .prod-main{flex:1;min-width:0}
+  .prod-name{font-weight:600;font-size:15px}
+  .prod-meta{font-size:11px;color:var(--ink-3);font-family:var(--num)}
+  .empty{color:var(--ink-3);font-size:13px;padding:8px 0}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(15,30,56,.5);display:none;align-items:flex-start;justify-content:center;padding:20px;overflow:auto;z-index:50}
+  .overlay.open{display:flex}
+  .modal{background:var(--card);border-radius:var(--radius);max-width:560px;width:100%;box-shadow:0 20px 60px rgba(15,30,56,.3);margin:auto}
+  .modal-h{position:sticky;top:0;background:var(--ink);color:#fff;padding:14px 20px;font-size:14px;font-weight:700;letter-spacing:.06em;border-radius:var(--radius) var(--radius) 0 0;display:flex;justify-content:space-between;align-items:center}
+  .modal-x{background:none;border:none;color:#fff;font-size:16px;cursor:pointer}
+  .modal-b{padding:18px 20px 22px}
+  .fg{margin-bottom:14px}
+  .fg label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+  .fg input,.fg select{width:100%;font-family:var(--jp);font-size:14px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:#fff}
+  .fg input:focus,.fg select:focus{outline:2px solid var(--gold);outline-offset:1px}
+  .fg-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .fg-row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+  .fg .u{font-size:11px;color:var(--ink-3);font-weight:500}
+  .modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  .band-title{font-size:12px;font-weight:700;color:var(--gold-deep);margin:6px 0 8px}
+  @media(max-width:520px){.fg-row4{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">LI<b>A</b>S</div>
+      <div class="tagline">製剤マスタ管理（管理者用）</div>
+    </div>
+    <a class="toplink" href="./lias-profit-simulator.html">お客様画面を開く →</a>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <!-- カテゴリー管理 -->
+  <section class="sect">
+    <div class="sect-h">カテゴリー管理</div>
+    <div id="catList"></div>
+    <div class="add-row">
+      <input id="newCat" type="text" placeholder="新しいカテゴリー名（例：フィラー）">
+      <button class="btn btn-gold" id="addCatBtn" type="button">追加</button>
+    </div>
+  </section>
+
+  <!-- 製剤一覧 -->
+  <section class="sect">
+    <div class="sect-h">製剤一覧<button class="btn btn-ink" id="newProdBtn" type="button">＋ 新規製剤</button></div>
+    <div id="prodList"></div>
+  </section>
+</div>
+
+<!-- 製剤エディタ -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-h"><span id="modalTitle">製剤を追加</span><button class="modal-x" id="modalX" type="button">✕</button></div>
+    <div class="modal-b">
+      <div class="fg">
+        <label for="fCat">カテゴリー</label>
+        <select id="fCat"></select>
+      </div>
+      <div class="fg">
+        <label for="fName">製品名</label>
+        <input id="fName" type="text" placeholder="例：TISSIVO（ティシボ）">
+      </div>
+      <div class="fg-row">
+        <div class="fg">
+          <label for="fUnit">仕入単位</label>
+          <select id="fUnit"><option>本</option><option>箱</option><option>瓶</option><option>セット</option><option>cc</option></select>
+        </div>
+        <div class="fg">
+          <label for="fDefaultCost">仕入単価の初期値（¥）<span class="u">お客様は変更可</span></label>
+          <input id="fDefaultCost" type="number" min="0" placeholder="8500">
+        </div>
+      </div>
+      <div class="fg-row">
+        <div class="fg">
+          <label for="fDoses">取り人数の参考目安（人分）<span class="u">1単位あたり</span></label>
+          <input id="fDoses" type="number" min="0" step="0.1" placeholder="1">
+        </div>
+        <div class="fg">
+          <label for="fCons">消耗品費（¥ / 人）</label>
+          <input id="fCons" type="number" min="0" placeholder="1500">
+        </div>
+      </div>
+
+      <div class="band-title">相場の目安（管理側のみ設定）</div>
+      <div class="fg-row4">
+        <div class="fg"><label>東京 下限</label><input id="fTokyoLo" type="number" min="0" placeholder="40000"></div>
+        <div class="fg"><label>東京 上限</label><input id="fTokyoHi" type="number" min="0" placeholder="60000"></div>
+        <div class="fg"><label>大阪 下限</label><input id="fOsakaLo" type="number" min="0" placeholder="30000"></div>
+        <div class="fg"><label>大阪 上限</label><input id="fOsakaHi" type="number" min="0" placeholder="50000"></div>
+      </div>
+
+      <div class="fg">
+        <label for="fSort">並び順（小さいほど上）</label>
+        <input id="fSort" type="number" placeholder="0">
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn" style="background:var(--gold-soft);color:var(--gold-deep)" id="cancelBtn" type="button">キャンセル</button>
+        <button class="btn btn-gold" id="saveBtn" type="button">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== Supabase 設定（お客様画面と同じ値を入れる。空欄ならこの端末のローカル保存）===== */
+const SUPABASE_URL      = "";   // 例: https://xxxxxxxx.supabase.co
+const SUPABASE_ANON_KEY = "";
+
+let sb=null;
+if(SUPABASE_URL.startsWith("https://") && window.supabase){
+  try{ sb=window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }catch(e){ sb=null; }
+}
+const $=id=>document.getElementById(id);
+const yen=n=>"¥"+Math.round(Number(n)||0).toLocaleString("ja-JP");
+
+/* ---- data layer（Supabase / localStorageフォールバック）---- */
+const LSC="lias_admin_cats", LSP="lias_admin_prods";
+const lsGet=k=>{try{return JSON.parse(localStorage.getItem(k)||"[]");}catch(e){return [];}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+
+async function getCats(){
+  if(sb){ const {data}=await sb.from("categories").select("*").order("sort",{ascending:true}); return data||[]; }
+  return lsGet(LSC).sort((a,b)=>(a.sort||0)-(b.sort||0));
+}
+async function upsertCat(c){
+  if(sb){ await sb.from("categories").upsert(c); return; }
+  const arr=lsGet(LSC).filter(x=>x.name!==c.name); arr.push(c); lsSet(LSC,arr);
+}
+async function delCatRow(name){
+  if(sb){ await sb.from("categories").delete().eq("name",name); return; }
+  lsSet(LSC, lsGet(LSC).filter(x=>x.name!==name));
+}
+async function getProds(){
+  if(sb){ const {data}=await sb.from("products").select("*").order("sort",{ascending:true}); return data||[]; }
+  return lsGet(LSP).sort((a,b)=>(a.sort||0)-(b.sort||0));
+}
+async function upsertProd(p){
+  if(sb){ await sb.from("products").upsert(p); return; }
+  const arr=lsGet(LSP).filter(x=>x.id!==p.id); arr.push(p); lsSet(LSP,arr);
+}
+async function delProdRow(id){
+  if(sb){ await sb.from("products").delete().eq("id",id); return; }
+  lsSet(LSP, lsGet(LSP).filter(x=>x.id!==id));
+}
+
+/* ---- banner ---- */
+function showBanner(){
+  $("banner").innerHTML = sb
+    ? `<b>Supabaseに接続中。</b> ここで登録した内容がお客様画面に反映されます。`
+    : `<b>Supabase未設定：この端末のローカル保存で動作中。</b> お客様画面と共有するには、上部の <code>SUPABASE_URL</code> / <code>SUPABASE_ANON_KEY</code> を設定してください（SQLはファイル冒頭のコメント参照）。`;
+}
+
+/* ---- render categories ---- */
+async function renderCats(){
+  const cats=await getCats(), prods=await getProds();
+  const list=$("catList"); list.innerHTML="";
+  if(!cats.length){ list.innerHTML='<div class="empty">カテゴリーがまだありません。下から追加してください。</div>'; return; }
+  cats.forEach((c,i)=>{
+    const count=prods.filter(p=>p.cat===c.name).length;
+    const row=document.createElement("div"); row.className="cat-row";
+    row.innerHTML=`
+      <button class="mini" data-up ${i===0?"disabled":""}>↑</button>
+      <button class="mini" data-down ${i===cats.length-1?"disabled":""}>↓</button>
+      <span class="cat-name">${c.name}</span>
+      <span class="cat-count">${count}件</span>
+      <button class="mini" data-ren>名前変更</button>
+      <button class="mini del" data-del>削除</button>`;
+    row.querySelector("[data-up]").onclick   =()=>moveCat(i,-1,cats);
+    row.querySelector("[data-down]").onclick =()=>moveCat(i, 1,cats);
+    row.querySelector("[data-ren]").onclick  =()=>renameCat(c.name);
+    row.querySelector("[data-del]").onclick  =()=>removeCat(c.name,count);
+    list.appendChild(row);
+  });
+}
+async function moveCat(i,dir,cats){
+  const j=i+dir; if(j<0||j>=cats.length) return;
+  const order=cats.map(c=>c.name);
+  [order[i],order[j]]=[order[j],order[i]];
+  for(let k=0;k<order.length;k++){ await upsertCat({name:order[k],sort:k}); }
+  renderAll();
+}
+async function renameCat(oldName){
+  const nn=prompt("新しいカテゴリー名", oldName); if(nn===null) return;
+  const newName=nn.trim(); if(!newName||newName===oldName) return;
+  const cats=await getCats(); const c=cats.find(x=>x.name===oldName)||{sort:0};
+  await upsertCat({name:newName, sort:c.sort});
+  const prods=(await getProds()).filter(p=>p.cat===oldName);
+  for(const p of prods){ await upsertProd({...p, cat:newName}); }
+  await delCatRow(oldName);
+  renderAll();
+}
+async function removeCat(name,count){
+  if(count>0){ alert(`「${name}」には${count}件の製剤があります。先に製剤を移動または削除してください。`); return; }
+  if(!confirm(`カテゴリー「${name}」を削除しますか？`)) return;
+  await delCatRow(name); renderAll();
+}
+async function addCat(){
+  const v=$("newCat").value.trim(); if(!v) return;
+  const cats=await getCats();
+  if(cats.some(c=>c.name===v)){ alert("同じ名前のカテゴリーが既にあります。"); return; }
+  await upsertCat({name:v, sort:cats.length});
+  $("newCat").value=""; renderAll();
+}
+
+/* ---- render products ---- */
+async function renderProds(){
+  const cats=await getCats(), prods=await getProds();
+  const list=$("prodList"); list.innerHTML="";
+  if(!prods.length){ list.innerHTML='<div class="empty">製剤がまだありません。「＋ 新規製剤」から登録してください。</div>'; return; }
+  const order=cats.map(c=>c.name);
+  const groups=[...order];
+  // カテゴリー未登録の製剤も拾う
+  prods.forEach(p=>{ if(!groups.includes(p.cat)) groups.push(p.cat||"未分類"); });
+  groups.forEach(cat=>{
+    const items=prods.filter(p=>(p.cat||"未分類")===cat);
+    if(!items.length) return;
+    const h=document.createElement("div"); h.className="prod-cat"; h.textContent=cat; list.appendChild(h);
+    items.forEach(p=>{
+      const reg=p.regions||{};
+      const t=reg["東京"]||[], o=reg["大阪"]||[];
+      const row=document.createElement("div"); row.className="prod-row";
+      row.innerHTML=`
+        <div class="prod-main">
+          <div class="prod-name">${p.name||"(名称未設定)"}</div>
+          <div class="prod-meta">仕入 ${yen(p.default_cost)}/${p.unit||"本"}・取り${(+p.doses||0)}人分・消耗品${yen(p.cons)}／相場 東京${t.length?yen(t[0])+"〜"+yen(t[1]):"-"}・大阪${o.length?yen(o[0])+"〜"+yen(o[1]):"-"}</div>
+        </div>
+        <button class="mini" data-edit>編集</button>
+        <button class="mini del" data-del>削除</button>`;
+      row.querySelector("[data-edit]").onclick=()=>openForm(p);
+      row.querySelector("[data-del]").onclick=async()=>{ if(confirm(`「${p.name}」を削除しますか？`)){ await delProdRow(p.id); renderAll(); } };
+      list.appendChild(row);
+    });
+  });
+}
+
+/* ---- product editor ---- */
+let editingId=null;
+async function openForm(p){
+  const cats=await getCats();
+  const fcat=$("fCat"); fcat.innerHTML="";
+  cats.forEach(c=>{const o=document.createElement("option");o.value=c.name;o.textContent=c.name;fcat.appendChild(o);});
+  if(!cats.length){ alert("先にカテゴリーを1つ以上追加してください。"); return; }
+
+  editingId = p ? p.id : null;
+  $("modalTitle").textContent = p ? "製剤を編集" : "製剤を追加";
+  const reg=(p&&p.regions)||{}, t=reg["東京"]||[], o=reg["大阪"]||[];
+  fcat.value       = p ? p.cat : cats[0].name;
+  $("fName").value = p ? (p.name||"") : "";
+  $("fUnit").value = p ? (p.unit||"本") : "本";
+  $("fDefaultCost").value = p ? (p.default_cost??"") : "";
+  $("fDoses").value = p ? (p.doses??"") : "";
+  $("fCons").value = p ? (p.cons??"") : "";
+  $("fTokyoLo").value = t[0]??""; $("fTokyoHi").value = t[1]??"";
+  $("fOsakaLo").value = o[0]??""; $("fOsakaHi").value = o[1]??"";
+  $("fSort").value = p ? (p.sort??0) : "";
+  $("overlay").classList.add("open");
+}
+function closeForm(){ $("overlay").classList.remove("open"); editingId=null; }
+
+async function saveProd(){
+  const name=$("fName").value.trim();
+  if(!name){ alert("製品名を入力してください。"); return; }
+  const n=v=>{ const x=parseFloat(v); return isNaN(x)?0:x; };
+  const regions={};
+  const tLo=n($("fTokyoLo").value), tHi=n($("fTokyoHi").value);
+  const oLo=n($("fOsakaLo").value), oHi=n($("fOsakaHi").value);
+  if(tLo||tHi) regions["東京"]=[tLo,tHi];
+  if(oLo||oHi) regions["大阪"]=[oLo,oHi];
+
+  const prods=await getProds();
+  const sortVal = $("fSort").value==="" ? prods.length : n($("fSort").value);
+  const row={
+    id: editingId || ("p_"+Date.now().toString(36)),
+    cat: $("fCat").value,
+    name,
+    unit: $("fUnit").value,
+    default_cost: n($("fDefaultCost").value),
+    doses: n($("fDoses").value)||1,
+    cons: n($("fCons").value),
+    regions,
+    sort: sortVal
+  };
+  await upsertProd(row);
+  closeForm(); renderAll();
+}
+
+/* ---- wire ---- */
+$("addCatBtn").onclick=addCat;
+$("newCat").addEventListener("keydown",e=>{ if(e.key==="Enter") addCat(); });
+$("newProdBtn").onclick=()=>openForm(null);
+$("modalX").onclick=closeForm;
+$("cancelBtn").onclick=closeForm;
+$("saveBtn").onclick=saveProd;
+$("overlay").addEventListener("click",e=>{ if(e.target===$("overlay")) closeForm(); });
+
+async function renderAll(){ await renderCats(); await renderProds(); }
+
+/* ---- boot ---- */
+showBanner();
+renderAll();
+</script>
+</body>
+</html>
