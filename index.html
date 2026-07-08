@@ -531,8 +531,8 @@ function fillPrintSheet(r){
    1) 下の2つを埋める
    2) SQL（下記チャットの手順）でテーブル profit_scenarios を作成
    ?clinic=ID をURLに付けると院ごとに保存を分離（Pittoから渡す想定） */
-const SUPABASE_URL      = "";   // 例: https://xxxxxxxx.supabase.co
-const SUPABASE_ANON_KEY = "";   // anon public key
+const SUPABASE_URL      = "https://iuumtggpouwayqsztgdv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1dW10Z2dwb3V3YXlxc3p0Z2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0ODE0MjUsImV4cCI6MjA5OTA1NzQyNX0.R8btgRhI4p-TY-munTKv8O-SGeafp0P8T9EruG6to0I";
 const OWNER = new URLSearchParams(location.search).get("clinic") || "default";
 
 let sb=null;
