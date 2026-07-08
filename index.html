@@ -15,6 +15,7 @@
     --cost:#9aa6b8; --cost-soft:#e7ebf1;
     --line:#e7e2d7; --red:#b4432f; --green:#3f7d55;
     --pink-soft:#fbe9ef; --pink-line:#f1c9d8; --pink-deep:#c76b8a;
+    --mint-soft:#e3f1ef; --mint-line:#bfe0dc; --mint-deep:#3f8a83; --mint:#80c3c0;
     --accent:#1f7a8c; --accent-deep:#155e6b; --accent-soft:#e4f0f2; --accent-line:#bcdce0;
     --radius:14px;
     --jp:"Noto Sans JP",-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
@@ -86,8 +87,8 @@
   .sub-h{display:flex;align-items:center;gap:10px;padding:18px 0 2px;font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--gold-deep)}
   .sub-h::after{content:"";flex:1;height:1px;background:var(--line)}
 
-  select.fieldsel{width:100%;font-family:var(--jp);font-size:14px;font-weight:500;color:var(--ink);background:var(--gold-soft);border:1px solid var(--line);border-radius:9px;padding:10px 32px 10px 12px;cursor:pointer;appearance:none;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%239a7330' stroke-width='1.6' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 10px center}
+  select.fieldsel{width:100%;font-family:var(--jp);font-size:14px;font-weight:500;color:var(--ink);background:var(--mint-soft);border:1px solid var(--mint-line);border-radius:9px;padding:10px 32px 10px 12px;cursor:pointer;appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%233f8a83' stroke-width='1.6' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 10px center}
 
   .money-in{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:0 14px;background:#fff;transition:border-color .15s}
   .money-in:focus-within{border-color:var(--gold)}
@@ -100,14 +101,14 @@
   .money-in select.unitsel{border:none;background:transparent;font-family:var(--jp);font-size:13px;color:var(--ink-3);cursor:pointer;padding:2px}
 
   /* --- market rate: simple range readout --- */
-  .rate{margin-top:12px;background:var(--gold-soft);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .rate{margin-top:12px;background:var(--mint-soft);border:1px solid var(--mint-line);border-radius:10px;padding:12px 14px}
   .rate-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
   .rate-label{font-size:12px;color:var(--ink-3);font-weight:600}
   .rate-range{font-family:var(--num);font-weight:700;font-size:17px;color:var(--ink)}
   .rate-status{display:inline-flex;align-items:center;gap:6px;margin-top:9px;font-size:12.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:#fff;border:1px solid var(--line)}
   .rate-status .dot{width:8px;height:8px;border-radius:50%}
   .rate-status.in{color:var(--green)} .rate-status.in .dot{background:var(--green)}
-  .rate-status.low{color:var(--gold-deep)} .rate-status.low .dot{background:var(--gold)}
+  .rate-status.low{color:var(--mint-deep)} .rate-status.low .dot{background:var(--mint)}
   .rate-status.high{color:var(--red)} .rate-status.high .dot{background:var(--red)}
 
   .slide-row{display:flex;align-items:center;gap:10px;margin-top:4px}
@@ -118,11 +119,11 @@
   .slide-val{font-family:var(--num);font-weight:700;font-size:20px;min-width:54px;text-align:right;white-space:nowrap;flex-shrink:0}
   .slide-val small{font-size:12px;font-weight:500;color:var(--ink-3);margin-left:2px}
 
-  .derived{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--gold-soft);border-radius:9px;padding:10px 14px;margin-top:12px;font-size:12px;color:var(--gold-deep);font-weight:600}
+  .derived{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--mint-soft);border-radius:9px;padding:10px 14px;margin-top:12px;font-size:12px;color:var(--mint-deep);font-weight:600}
   .derived .calc{font-family:var(--num);font-weight:500;color:var(--ink-2);font-size:11px}
   .derived b{font-family:var(--num);font-size:16px;color:var(--ink)}
-  .ref-hint{display:block;width:100%;text-align:left;font-family:var(--jp);font-size:12px;color:var(--gold-deep);background:var(--gold-soft);border:1px dashed var(--gold);border-radius:9px;padding:9px 12px;margin-bottom:8px;cursor:pointer;transition:.15s}
-  .ref-hint:hover{background:var(--gold);color:#fff;border-style:solid}
+  .ref-hint{display:block;width:100%;text-align:left;font-family:var(--jp);font-size:12px;color:var(--mint-deep);background:var(--mint-soft);border:1px dashed var(--mint);border-radius:9px;padding:9px 12px;margin-bottom:8px;cursor:pointer;transition:.15s}
+  .ref-hint:hover{background:var(--mint-deep);color:#fff;border-style:solid}
   .ref-hint:hover b{color:#fff}
   .ref-hint b{font-family:var(--jp);font-weight:700}
 
