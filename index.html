@@ -17,6 +17,7 @@
     --pink-soft:#ffeff5; --pink-line:#ffd6e3; --pink-deep:#e0789a;
     --mint-soft:#e3f1ef; --mint-line:#bfe0dc; --mint-deep:#3f8a83; --mint:#80c3c0;
     --blue:#2563c9; --blue-deep:#1d4ea3;
+    --yellow:#f7c948; --yellow-deep:#e3af1f;
     --accent:#1f7a8c; --accent-deep:#155e6b; --accent-soft:#e4f0f2; --accent-line:#bcdce0;
     --radius:14px;
     --jp:"Noto Sans JP",-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
@@ -34,7 +35,7 @@
   .tagline{font-size:22px;font-weight:700;color:var(--ink);letter-spacing:.02em;line-height:1.3}
   .subtitle{font-size:12px;color:var(--red);font-weight:600}
   @media(max-width:520px){.tagline{font-size:19px}}
-  select.big-sel{font-family:var(--jp);font-size:14px;font-weight:500;color:var(--ink);background:var(--pink-soft);border:1px solid var(--pink-line);border-radius:10px;padding:9px 34px 9px 14px;cursor:pointer;appearance:none;    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%23C76B8A' stroke-width='1.6' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 12px center}
+  select.big-sel{font-family:var(--jp);font-size:14px;font-weight:600;color:#fff;background:var(--blue);border:1px solid var(--blue-deep);border-radius:10px;padding:9px 34px 9px 14px;cursor:pointer;appearance:none;    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%23FFFFFF' stroke-width='1.8' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 12px center}
   select:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   .selectors{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-end}
   .sel-group{display:flex;flex-direction:column;gap:4px}
@@ -52,9 +53,9 @@
   .pitto-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   .pitto-logo{height:36px;width:auto;display:block}
   .pitto-tagline{font-size:12px;color:var(--ink-3)}
-  .pitto-cta{display:inline-flex;align-items:center;font-size:14px;font-weight:700;color:#fff;
-    background:var(--blue);border-radius:999px;padding:9px 16px;white-space:nowrap;transition:background .12s}
-  .pitto-banner:hover .pitto-cta{background:var(--blue-deep)}
+  .pitto-cta{display:inline-flex;align-items:center;font-size:14px;font-weight:800;color:var(--ink);
+    background:var(--yellow);border-radius:999px;padding:9px 16px;white-space:nowrap;transition:background .12s}
+  .pitto-banner:hover .pitto-cta{background:var(--yellow-deep)}
   .toprow{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
   .cost-row{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;align-items:start}
   .result-body{display:grid;grid-template-columns:0.85fr 1.15fr;align-items:stretch}
