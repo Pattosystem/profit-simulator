@@ -222,9 +222,20 @@
   @media print{
     body{background:#fff !important;padding:0;color:#000}
     .wrap{max-width:none;margin:0}
-    .wrap > *:not(#printSheet){display:none !important}
+    .wrap > *:not(#printSheet):not(#cmpPrintSheet){display:none !important}
     #printSheet{display:block;padding:8mm}
+    #cmpPrintSheet{display:none !important}
+    body.print-cmp #printSheet{display:none !important}
+    body.print-cmp #cmpPrintSheet{display:block !important;padding:6mm;page:cmpland}
+    body.print-cmp .cmp-table{font-size:10.5px;min-width:0}
+    body.print-cmp .cmp-table th,body.print-cmp .cmp-table td{padding:6px 8px}
   }
+  @page{size:A4;margin:8mm}
+  @page cmpland{size:A4 landscape;margin:8mm}
+  .cps-title{font-size:15px;font-weight:700;color:var(--ink);margin:12px 0 8px}
+  .cmp-head-btns{display:flex;align-items:center;gap:10px}
+  .cmp-print{background:#fff;color:var(--ink);border:none;border-radius:999px;font-family:var(--jp);font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;transition:.15s}
+  .cmp-print:hover{background:var(--accent-soft)}
   .ps-head{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:10px}
   .ps-logo{font-family:var(--num);font-weight:700;font-size:26px;letter-spacing:.14em;color:var(--ink)}
   .ps-logo b{color:var(--gold)}
@@ -386,10 +397,17 @@
 
   <div class="cmp-overlay" id="cmpOverlay" style="display:none">
     <div class="cmp-modal">
-      <div class="cmp-head"><span>製剤比較</span><button id="cmpClose" class="cmp-x" type="button" aria-label="閉じる">✕</button></div>
+      <div class="cmp-head"><span>製剤比較</span>
+        <div class="cmp-head-btns">
+          <button id="cmpPrintBtn" class="cmp-print" type="button">印刷・PDF</button>
+          <button id="cmpClose" class="cmp-x" type="button" aria-label="閉じる">✕</button>
+        </div>
+      </div>
       <div class="cmp-body" id="cmpBody"></div>
     </div>
   </div>
+
+  <div class="print-sheet" id="cmpPrintSheet"></div>
 
   <div class="note">
     <b>※ 数値はすべてサンプルです。</b> 仕入単価は顧客ごとに直接入力してください。相場の目安は、下部の <code>PRODUCTS</code> の <code>regions</code> に <b>地域ごとの下限・上限を2つ入れるだけ</b>です（管理側が調査して設定）。地域を増やす・減らすのもここで調整できます。Pittoログイン内に設置し、ログインクリニックの契約単価を Supabase から <code>#cost</code> に流し込めば顧客別に自動化できます。本試算は粗利益ベースで、人件費・設備償却・広告費は含みません。
@@ -673,9 +691,9 @@ function metrics(s){
   return {totalCost,profit,margin,monthly,annual:monthly*12};
 }
 
-function openCompare(){
+function buildCmpData(){
   const items=HISTORY.filter(s=>selected.has(s.id));
-  if(items.length<2) return;
+  if(items.length<2) return null;
   const m=items.map(metrics);
   const maxAnnual=Math.max(...m.map(x=>x.annual));
   const win=i=>m[i].annual===maxAnnual;
@@ -690,22 +708,42 @@ function openCompare(){
     ["月間施術件数", items.map(s=>s.vol+"件")],
     ["月間粗利", m.map(x=>yen(x.monthly))],
   ];
+  return {items,m,win,rows};
+}
+function cmpTableHTML(d){
   let html='<table class="cmp-table"><thead><tr><th></th>';
-  items.forEach((s,i)=>{ html+=`<th class="${win(i)?'cmp-wincol':''}">${s.name}${win(i)?'<span class="cmp-badge">最有力</span>':''}</th>`; });
+  d.items.forEach((s,i)=>{ html+=`<th class="${d.win(i)?'cmp-wincol':''}">${s.name}${d.win(i)?'<span class="cmp-badge">最有力</span>':''}</th>`; });
   html+='</tr></thead><tbody>';
-  rows.forEach(([label,vals])=>{
+  d.rows.forEach(([label,vals])=>{
     html+=`<tr><td class="cmp-lab">${label}</td>`;
-    vals.forEach((v,i)=>{ html+=`<td class="${win(i)?'cmp-wincol':''}">${v}</td>`; });
+    vals.forEach((v,i)=>{ html+=`<td class="${d.win(i)?'cmp-wincol':''}">${v}</td>`; });
     html+='</tr>';
   });
   html+='<tr class="cmp-annual"><td class="cmp-lab">年間粗利</td>';
-  m.forEach((x,i)=>{ html+=`<td class="${win(i)?'cmp-wincol':''}">${yen(x.annual)}${win(i)?' ★':''}</td>`; });
+  d.m.forEach((x,i)=>{ html+=`<td class="${d.win(i)?'cmp-wincol':''}">${yen(x.annual)}${d.win(i)?' ★':''}</td>`; });
   html+='</tr></tbody></table>';
-  $("cmpBody").innerHTML=html;
+  return html;
+}
+function openCompare(){
+  const d=buildCmpData(); if(!d) return;
+  $("cmpBody").innerHTML=cmpTableHTML(d);
   $("cmpOverlay").style.display="flex";
 }
+function printCompare(){
+  const d=buildCmpData(); if(!d) return;
+  const date=new Date().toLocaleDateString("ja-JP");
+  $("cmpPrintSheet").innerHTML=
+    `<div class="ps-head"><div class="ps-logo">LIAS<b>.</b></div><div class="ps-meta">製剤比較シート<br>${date}</div></div>`+
+    `<h2 class="cps-title">製剤比較</h2>`+
+    cmpTableHTML(d)+
+    `<div class="ps-foot">※ 数値は入力値に基づく粗利益ベースの目安です。人件費・設備償却・広告費は含みません。　／　LIAS Co., Ltd.</div>`;
+  document.body.classList.add("print-cmp");
+  window.print();
+}
+window.addEventListener("afterprint",()=>document.body.classList.remove("print-cmp"));
 
 $("cmpBtn").addEventListener("click",openCompare);
+$("cmpPrintBtn").addEventListener("click",printCompare);
 $("cmpClear").addEventListener("click",()=>{ selected.clear(); renderSaved(); });
 $("cmpClose").addEventListener("click",()=>$("cmpOverlay").style.display="none");
 $("cmpOverlay").addEventListener("click",e=>{ if(e.target===$("cmpOverlay")) $("cmpOverlay").style.display="none"; });
