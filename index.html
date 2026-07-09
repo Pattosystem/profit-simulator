@@ -18,6 +18,7 @@
     --mint-soft:#e3f1ef; --mint-line:#bfe0dc; --mint-deep:#3f8a83; --mint:#80c3c0;
     --blue:#2563c9; --blue-deep:#1d4ea3;
     --yellow:#f7c948; --yellow-deep:#e3af1f;
+    --red-vivid:#e5342a;
     --accent:#1f7a8c; --accent-deep:#155e6b; --accent-soft:#e4f0f2; --accent-line:#bcdce0;
     --radius:14px;
     --jp:"Noto Sans JP",-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
@@ -94,10 +95,10 @@
 
   .money-in{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:0 14px;background:#fff;transition:border-color .15s}
   .money-in:focus-within{border-color:var(--gold)}
-  .self-note{font-size:11px;color:var(--red);opacity:.55;font-weight:500;margin-bottom:6px}
+  .self-note{font-size:11px;color:var(--red-vivid);opacity:.85;font-weight:600;margin-bottom:6px}
   .ref-badge{display:inline-block;opacity:1;color:var(--mint-deep);background:var(--mint-soft);border:1px solid var(--mint-line);border-radius:999px;padding:1px 8px;font-weight:700;font-size:10.5px;margin-left:4px;vertical-align:middle}
-  .self-in{border:1.5px dashed var(--red)}
-  .self-box{border:1.5px dashed var(--red);border-radius:10px;padding:9px 12px}
+  .self-in{border:2px dashed var(--red-vivid)}
+  .self-box{border:2px dashed var(--red-vivid);border-radius:10px;padding:9px 12px}
   .money-in .yen{font-family:var(--num);color:var(--ink-3);font-weight:600}
   .money-in input{flex:1;border:none;outline:none;background:transparent;font-family:var(--num);font-size:20px;font-weight:600;color:var(--ink);padding:11px 0;width:100%;text-align:right}
   .money-in .unit{font-size:13px;color:var(--ink-3);white-space:nowrap}
@@ -143,6 +144,9 @@
   .hero .big{font-family:var(--num);font-weight:700;letter-spacing:-.01em;line-height:1;font-size:clamp(38px,8.5vw,60px);margin:6px 0 2px;color:var(--gold-bright);font-variant-numeric:tabular-nums}
   .hero .big.loss{color:#ff8a72}
   .hero .sub{font-size:14px;color:rgba(255,255,255,.9)}
+  .hero .perbox{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.14);font-size:14px;color:rgba(255,255,255,.9)}
+  .hero .perbox b{font-family:var(--num);font-weight:700;font-size:22px;color:var(--gold-bright);margin-left:4px;vertical-align:-1px}
+  .hero .perbox b.loss{color:#ff8a72}
   .hero .sub b{font-family:var(--num);font-weight:700;color:var(--gold-bright)}
   .divider{height:1px;background:rgba(255,255,255,.12);margin:0 24px}
   .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:rgba(255,255,255,.1);margin-top:20px}
@@ -265,8 +269,7 @@
 
   <div class="stack">
 
-    <div class="toprow">
-      <section class="card">
+    <section class="card">
         <div class="card-h"><span class="num">1</span>相場</div>
         <div class="field" style="padding-top:0">
           <div class="field-top"><label for="region">地域（相場の目安）</label></div>
@@ -283,12 +286,13 @@
 
       <section class="card">
         <div class="card-h"><span class="num">2</span>施術価格・件数</div>
+        <div class="cost-row">
         <div class="field" style="padding-top:0">
           <div class="field-top"><label for="sell">施術価格（患者様への価格）</label><span class="hint">1回あたり</span></div>
           <div class="self-note">ご自身で設定してください</div>
           <div class="money-in self-in"><span class="yen">¥</span><input id="sell" type="text" inputmode="numeric" value="30,000"></div>
         </div>
-        <div class="field">
+        <div class="field" style="padding-top:0">
           <div class="field-top"><label for="vol">月間の施術件数</label><span class="hint">スライドで調整</span></div>
           <div class="self-note">ご自身で設定してください</div>
           <div class="slide-row self-box">
@@ -296,8 +300,8 @@
             <div class="slide-val"><span id="volVal">20</span><small>件</small></div>
           </div>
         </div>
+        </div>
       </section>
-    </div>
 
     <section class="card">
       <div class="card-h"><span class="num">3</span>原価・施術できる人数</div>
@@ -333,6 +337,7 @@
           <div class="cap">1施術あたりの粗利益</div>
           <div class="big" id="heroProfit">¥0</div>
           <div class="sub">粗利率 <b id="heroMargin">0%</b></div>
+          <div class="perbox">1<span id="heroUnit">箱</span>あたりの利益 <b id="heroPerBox">¥0</b></div>
         </div>
         <div class="result-detail">
           <div class="stats">
@@ -468,12 +473,14 @@ function compute(){
   const unitCost=num($("cost").value);
   const doses=Math.max(0.0001,num($("doses").value));
   const vol=num($("vol").value);
+  const unit=$("unit").value;
   const drugPer=unitCost/doses;
   const totalCost=drugPer;
   const profit=sell-totalCost;
+  const perBox=profit*doses;
   const margin=sell>0?profit/sell:0;
   const monthly=profit*vol, annual=monthly*12;
-  return {sell,unitCost,doses,drugPer,totalCost,profit,margin,monthly,annual,loss:profit<0};
+  return {sell,unitCost,doses,unit,drugPer,totalCost,profit,perBox,margin,monthly,annual,loss:profit<0};
 }
 
 /* market rate: plain range + in/low/high badge */
@@ -492,6 +499,8 @@ function render(animate){
   if(animate!==false) setProfit(r.profit,r.loss);
   else{const el=$("heroProfit");el.textContent=yen(r.profit);el.classList.toggle("loss",r.loss);shown=r.profit;}
   const mg=$("heroMargin");mg.textContent=(r.margin*100).toFixed(1)+"%";mg.classList.toggle("loss",r.loss);
+  $("heroUnit").textContent=r.unit;
+  const pb=$("heroPerBox");pb.textContent=yen(r.perBox);pb.classList.toggle("loss",r.loss);
   $("statSell").textContent=yen(r.sell);
   $("txCost").textContent=yen(r.totalCost);
   $("drugPer").textContent=yen(r.drugPer);
