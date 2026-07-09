@@ -173,6 +173,8 @@
 
   /* --- toolbar --- */
   .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:12px;padding:11px 14px}
+  .toolbar-note{flex-basis:100%;font-size:13px;font-weight:700;color:#ffd21e;line-height:1.5;background:var(--ink);border-radius:9px;padding:8px 12px;margin-top:2px}
+  .toolbar-note b{font-weight:800;color:#ffe14d}
   .btn{font-family:var(--jp);font-size:13px;font-weight:700;border:none;border-radius:10px;padding:12px 18px;cursor:pointer;transition:.15s;white-space:nowrap}
   .btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{background:var(--gold-deep)}
   .btn-ink{background:var(--ink);color:#fff}.btn-ink:hover{background:#1a2c4a}
@@ -369,6 +371,7 @@
   <div class="toolbar">
     <button id="saveBtn" class="btn btn-accent" type="button">この試算を履歴に残す</button>
     <button id="printBtn" class="btn btn-accent-o" type="button">印刷・PDF出力</button>
+    <div class="toolbar-note">💡 2つ以上の製剤を履歴に残すと、あとから<b>まとめて利益比較（A4印刷も可）</b>できます</div>
   </div>
 
   <section class="saved" id="savedWrap" style="display:none">
@@ -409,9 +412,6 @@
 
   <div class="print-sheet" id="cmpPrintSheet"></div>
 
-  <div class="note">
-    <b>※ 数値はすべてサンプルです。</b> 仕入単価は顧客ごとに直接入力してください。相場の目安は、下部の <code>PRODUCTS</code> の <code>regions</code> に <b>地域ごとの下限・上限を2つ入れるだけ</b>です（管理側が調査して設定）。地域を増やす・減らすのもここで調整できます。Pittoログイン内に設置し、ログインクリニックの契約単価を Supabase から <code>#cost</code> に流し込めば顧客別に自動化できます。本試算は粗利益ベースで、人件費・設備償却・広告費は含みません。
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
