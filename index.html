@@ -106,6 +106,8 @@
 
   /* --- market rate: simple range readout --- */
   .rate{margin-top:12px;background:var(--mint-soft);border:1px solid var(--mint-line);border-radius:10px;padding:12px 14px}
+  .rate-note{margin-top:10px;padding-top:10px;border-top:1px dashed var(--mint-line);font-size:12px;line-height:1.5;color:var(--mint-deep)}
+  .rate-note b{font-weight:700;color:var(--mint-deep)}
   .rate-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
   .rate-label{font-size:12px;color:var(--ink-3);font-weight:600}
   .rate-range{font-family:var(--num);font-weight:700;font-size:17px;color:var(--ink)}
@@ -293,6 +295,7 @@
               <span class="rate-range" id="rateRange">¥30,000 〜 ¥50,000</span>
             </div>
             <div class="rate-status in" id="rateStatus"><span class="dot"></span><span id="rateText">相場の範囲内</span></div>
+            <div class="rate-note" id="rateNote" style="display:none"></div>
           </div>
         </div>
       </section>
@@ -533,6 +536,9 @@ function render(animate){
     ? `<span class="warn">▲ 現在の施術価格では赤字です。</span>損益分岐 <b>${yen(r.totalCost)}</b> 以上に`
     : `損益分岐価格 <b>${yen(r.totalCost)}</b>（これ以下だと赤字）`;
   renderRate(r.sell);
+  const dn=$("rateNote");
+  if(CURRENT&&CURRENT.doseNote){dn.style.display="";dn.innerHTML=`<b>想定使用量：</b>${CURRENT.doseNote}`;}
+  else{dn.style.display="none";}
   fillPrintSheet(r);
 }
 
@@ -777,6 +783,7 @@ async function loadProducts(){
     if(!error && data && data.length){
       PRODUCTS=data.map(r=>({ id:r.id, cat:r.cat, name:r.name, unit:r.unit||"本",
         doses:Number(r.doses)||1, cons:Number(r.cons)||0, defaultCost:Number(r.default_cost)||0,
+        doseNote:r.dose_note||"",
         regions:r.regions||{} }));
     }
   }
