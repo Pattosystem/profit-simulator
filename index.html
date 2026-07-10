@@ -108,6 +108,16 @@
 
   /* --- market rate: simple range readout --- */
   .rate{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .card-h-sub{font-size:11px;font-weight:600;color:var(--ink-3);margin-left:auto}
+  .rate-mini{display:flex;flex-direction:column;gap:6px}
+  .rm-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:8px 12px;background:#fff;border:1px solid var(--line);border-radius:9px}
+  .rm-region{font-size:12px;font-weight:700;color:var(--ink);min-width:34px}
+  .rm-range{font-family:var(--num);font-weight:700;font-size:15px;color:var(--ink);text-align:right}
+  .rm-badge{font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap}
+  .rm-badge.in{color:var(--green);background:#e9f4ee}
+  .rm-badge.low{color:var(--mint-deep);background:var(--mint-soft)}
+  .rm-badge.high{color:var(--red-vivid);background:var(--red-soft)}
+  .rm-empty{font-size:12px;color:var(--ink-3);padding:6px 2px}
   .rate-note{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;line-height:1.5;color:var(--mint-deep)}
   .rate-note b{font-weight:700;color:var(--mint-deep)}
   .rate-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
@@ -287,19 +297,10 @@
   <div class="stack">
 
     <section class="card">
-        <div class="card-h"><span class="num">1</span>相場</div>
-        <div class="field" style="padding-top:0">
-          <div class="field-top"><label for="region">地域（相場の目安）</label></div>
-          <select id="region" class="fieldsel"></select>
-          <div class="rate">
-            <div class="rate-top">
-              <span class="rate-label"><span id="rateRegion">大阪</span>の相場目安</span>
-              <span class="rate-range" id="rateRange">¥30,000 〜 ¥50,000</span>
-            </div>
-            <div class="rate-status in" id="rateStatus"><span class="dot"></span><span id="rateText">相場の範囲内</span></div>
-            <div class="rate-note" id="rateNote" style="display:none"></div>
-          </div>
-        </div>
+        <div class="card-h"><span class="num">1</span>相場<span class="card-h-sub">地域別の目安（参考）</span></div>
+        <select id="region" class="fieldsel" style="display:none" aria-hidden="true"></select>
+        <div class="rate-mini" id="rateMini"></div>
+        <div class="rate-note" id="rateNote" style="display:none"></div>
       </section>
 
       <section class="card">
@@ -506,15 +507,19 @@ function compute(){
   return {sell,unitCost,doses,unit,drugPer,totalCost,profit,perBox,margin,monthly,annual,loss:profit<0};
 }
 
-/* market rate: plain range + in/low/high badge */
+/* market rate: show all regions at once, compact, with per-region status */
 function renderRate(sell){
-  const [lo,hi]=currentBand();
-  $("rateRegion").textContent=$("region").value;
-  $("rateRange").textContent=`${yen(lo)} 〜 ${yen(hi)}`;
-  const box=$("rateStatus"), txt=$("rateText");
-  if(sell<lo){box.className="rate-status low";txt.textContent="相場より安め";}
-  else if(sell>hi){box.className="rate-status high";txt.textContent="相場より高め";}
-  else{box.className="rate-status in";txt.textContent="相場の範囲内";}
+  const regions=(CURRENT&&CURRENT.regions)?CURRENT.regions:{};
+  const keys=Object.keys(regions);
+  const mini=$("rateMini");
+  if(!keys.length){mini.innerHTML='<div class="rm-empty">相場の目安は未設定です</div>';return;}
+  mini.innerHTML=keys.map(k=>{
+    const [lo,hi]=regions[k]||[0,0];
+    let cls="in",label="範囲内";
+    if(sell<lo){cls="low";label="相場より安め";}
+    else if(sell>hi){cls="high";label="相場より高め";}
+    return `<div class="rm-row"><span class="rm-region">${k}</span><span class="rm-range">${yen(lo)} 〜 ${yen(hi)}</span><span class="rm-badge ${cls}">${label}</span></div>`;
+  }).join("");
 }
 
 function render(animate){
