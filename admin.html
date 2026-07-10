@@ -165,6 +165,11 @@
       </div>
 
       <div class="fg">
+        <label for="fDoseNote">想定使用量メモ<span class="u">お客様の相場欄に表示・空欄なら非表示</span></label>
+        <input id="fDoseNote" type="text" placeholder="例：1vialを6ccで希釈・1施術3cc使用を想定">
+      </div>
+
+      <div class="fg">
         <label for="fSort">並び順（小さいほど上）</label>
         <input id="fSort" type="number" placeholder="0">
       </div>
@@ -329,6 +334,7 @@ async function openForm(p){
   $("fTokyoLo").value = t[0]??""; $("fTokyoHi").value = t[1]??"";
   $("fOsakaLo").value = o[0]??""; $("fOsakaHi").value = o[1]??"";
   $("fSort").value = p ? (p.sort??0) : "";
+  $("fDoseNote").value = p ? (p.dose_note||"") : "";
   $("overlay").classList.add("open");
 }
 function closeForm(){ $("overlay").classList.remove("open"); editingId=null; }
@@ -353,6 +359,7 @@ async function saveProd(){
     default_cost: n($("fDefaultCost").value),
     doses: n($("fDoses").value)||1,
     cons: n($("fCons").value),
+    dose_note: $("fDoseNote").value.trim(),
     regions,
     sort: sortVal
   };
