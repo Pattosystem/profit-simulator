@@ -107,6 +107,8 @@
   .money-in select.unitsel{border:none;background:transparent;font-family:var(--jp);font-size:13px;color:var(--ink-3);cursor:pointer;padding:2px}
 
   /* --- market rate: simple range readout --- */
+  .cost-desc{font-size:11px;color:var(--ink-3);line-height:1.5;margin-bottom:5px}
+  .cost-desc-note{color:var(--red-vivid);font-weight:600;margin-left:4px}
   .rate{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
   .card-h-sub{font-size:11px;font-weight:600;color:var(--ink-3);margin-left:auto}
   .rate-mini{display:flex;flex-direction:column;gap:6px}
@@ -326,7 +328,8 @@
       <div class="card-h"><span class="num">3</span>原価・施術できる人数</div>
       <div class="cost-row">
         <div class="field" style="padding-top:0">
-          <div class="field-top"><label for="cost">仕入単価（自由入力）</label><span class="hint">顧客ごとの納入価</span></div>
+          <div class="field-top"><label for="cost">仕入単価（自由入力）</label></div>
+          <div class="cost-desc">年間を通じた相場価格を参考として表記<span class="cost-desc-note">※お客様納入価格とは異なります。</span></div>
           <div class="self-note">ご自身で設定してください <span class="ref-badge">参考価格を表示中／変更できます</span></div>
           <div class="money-in self-in">
             <span class="yen">¥</span>
